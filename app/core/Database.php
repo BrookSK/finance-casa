@@ -10,8 +10,8 @@ class Database
     // Configuração direta (sem .env)
     private static string $host = 'localhost';
     private static string $dbname = 'financas_casal';
-    private static string $username = 'root';
-    private static string $password = '';
+    private static string $username = 'financas_casal';
+    private static string $password = 'FPuh#ko54oBjim4?';
     private static string $charset = 'utf8mb4';
 
     public static function getInstance(): PDO
