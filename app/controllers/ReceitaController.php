@@ -5,11 +5,25 @@ class ReceitaController extends Controller
     {
         $mes = (int) ($_GET['mes'] ?? currentMonth());
         $ano = (int) ($_GET['ano'] ?? currentYear());
+        $filtroStatus = $_GET['status'] ?? '';
+
         $model = new Receita();
-        $receitas = $model->getByMonth($mes, $ano);
+
+        if ($filtroStatus) {
+            $sql = "SELECT r.*, u.nome as usuario_nome, c.nome as categoria_nome, c.cor as categoria_cor
+                    FROM receitas r
+                    LEFT JOIN usuarios u ON r.usuario_id = u.id
+                    LEFT JOIN categorias c ON r.categoria_id = c.id
+                    WHERE r.mes_referencia = :mes AND r.ano_referencia = :ano AND r.status = :status
+                    ORDER BY r.data_prevista ASC, r.titulo ASC";
+            $receitas = $model->query($sql, ['mes' => $mes, 'ano' => $ano, 'status' => $filtroStatus]);
+        } else {
+            $receitas = $model->getByMonth($mes, $ano);
+        }
+
         $totalPrevisto = $model->getTotalByMonth($mes, $ano);
         $totalRecebido = $model->getTotalRecebido($mes, $ano);
-        $this->view('receitas/index', compact('receitas', 'mes', 'ano', 'totalPrevisto', 'totalRecebido'));
+        $this->view('receitas/index', compact('receitas', 'mes', 'ano', 'totalPrevisto', 'totalRecebido', 'filtroStatus'));
     }
 
     public function create(): void

@@ -30,6 +30,17 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
     </div>
 </div>
 
+<!-- Filtros -->
+<div class="filter-bar">
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>" class="filter-chip <?= !$filtroStatus && !$filtroProprietario ? 'active' : '' ?>">Todas</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&status=pendente" class="filter-chip <?= $filtroStatus === 'pendente' ? 'active' : '' ?>">Pendentes</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&status=paga" class="filter-chip <?= $filtroStatus === 'paga' ? 'active' : '' ?>">Pagas</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&proprietario=lucas" class="filter-chip <?= $filtroProprietario === 'lucas' ? 'active' : '' ?>">Lucas</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&proprietario=bia" class="filter-chip <?= $filtroProprietario === 'bia' ? 'active' : '' ?>">Bia</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&proprietario=compartilhado" class="filter-chip <?= $filtroProprietario === 'compartilhado' ? 'active' : '' ?>">Casa</a>
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&proprietario=empresa" class="filter-chip <?= $filtroProprietario === 'empresa' ? 'active' : '' ?>">Empresa</a>
+</div>
+
 <div class="card">
     <?php if (empty($despesas)): ?>
         <div class="empty-state">

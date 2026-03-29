@@ -31,6 +31,13 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
     </div>
 </div>
 
+<!-- Filtros -->
+<div class="filter-bar">
+    <a href="/receitas?mes=<?= $mes ?>&ano=<?= $ano ?>" class="filter-chip <?= !$filtroStatus ? 'active' : '' ?>">Todas</a>
+    <a href="/receitas?mes=<?= $mes ?>&ano=<?= $ano ?>&status=prevista" class="filter-chip <?= $filtroStatus === 'prevista' ? 'active' : '' ?>">Previstas</a>
+    <a href="/receitas?mes=<?= $mes ?>&ano=<?= $ano ?>&status=recebida" class="filter-chip <?= $filtroStatus === 'recebida' ? 'active' : '' ?>">Recebidas</a>
+</div>
+
 <!-- Lista -->
 <div class="card">
     <?php if (empty($receitas)): ?>
