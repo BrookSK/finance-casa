@@ -31,9 +31,18 @@ class Router
 
     public function dispatch(): void
     {
-        $url = isset($_GET['url']) ? '/' . trim($_GET['url'], '/') : '/';
-        // Remover query string da URL para matching
-        $url = strtok($url, '?');
+        // Detectar URL: primeiro tenta $_GET['url'] (via .htaccess do /public),
+        // senão usa REQUEST_URI (quando servidor aponta pra raiz)
+        if (isset($_GET['url']) && $_GET['url'] !== '') {
+            $url = '/' . trim($_GET['url'], '/');
+        } else {
+            $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $url = $url ?: '/';
+        }
+        // Normalizar
+        $url = '/' . trim($url, '/');
+        if ($url === '') $url = '/';
+
         $httpMethod = $_SERVER['REQUEST_METHOD'];
 
         // Suporte a _method para PUT/DELETE via POST

@@ -85,8 +85,13 @@ function monthName(int $month): string
 
 function isActive(string $path): string
 {
-    $url = isset($_GET['url']) ? '/' . trim($_GET['url'], '/') : '/';
-    $url = strtok($url, '?');
+    if (isset($_GET['url']) && $_GET['url'] !== '') {
+        $url = '/' . trim($_GET['url'], '/');
+    } else {
+        $url = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $url = '/' . trim($url ?: '', '/');
+    }
+    if ($url === '') $url = '/';
     if ($path === '/' || $path === '/dashboard') {
         return ($url === '/' || $url === '/dashboard') ? 'active' : '';
     }
