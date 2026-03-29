@@ -45,11 +45,21 @@ class ListaCompra extends Model
 
     public function getTotalGastoMercadoMes(int $mes, int $ano): float
     {
+        // Soma de listas de compras do mês
         $sql = "SELECT COALESCE(SUM(lc.total_real), 0) FROM listas_compras lc
                 WHERE MONTH(lc.data_compra) = :mes AND YEAR(lc.data_compra) = :ano AND lc.status != 'cancelada'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['mes' => $mes, 'ano' => $ano]);
-        return (float) $stmt->fetchColumn();
+        $totalListas = (float) $stmt->fetchColumn();
+
+        // Soma de despesas pagas na categoria Mercado (id=9) no mês
+        $sql2 = "SELECT COALESCE(SUM(d.valor), 0) FROM despesas d
+                 WHERE d.categoria_id = 9 AND d.mes_referencia = :mes AND d.ano_referencia = :ano AND d.status = 'paga'";
+        $stmt2 = $this->db->prepare($sql2);
+        $stmt2->execute(['mes' => $mes, 'ano' => $ano]);
+        $totalDespesas = (float) $stmt2->fetchColumn();
+
+        return $totalListas + $totalDespesas;
     }
 
     public function getHistoricoPorLocal(): array
