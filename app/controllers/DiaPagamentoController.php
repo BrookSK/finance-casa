@@ -31,27 +31,8 @@ class DiaPagamentoController extends Controller
         }
         unset($c);
 
-        // Mês de pagamento = mês seguinte
-        // (você guarda em março pra pagar em abril)
-        $mesPagamento = $mes + 1;
-        $anoPagamento = $ano;
-        if ($mesPagamento > 12) { $mesPagamento = 1; $anoPagamento++; }
-
-        // Despesas pendentes do MÊS SEGUINTE (que serão pagas com o dinheiro guardado agora)
-        $despesasProximoMes = $despesaModel->query(
-            "SELECT d.*, c.nome as categoria_nome, ca.nome as cartao_nome
-             FROM despesas d
-             LEFT JOIN categorias c ON d.categoria_id = c.id
-             LEFT JOIN cartoes ca ON d.cartao_id = ca.id
-             WHERE d.mes_referencia = :mes AND d.ano_referencia = :ano
-             AND d.status = 'pendente'
-             AND (d.usuario_id = :uid OR d.proprietario = 'compartilhado')
-             ORDER BY d.data_vencimento ASC, d.nome ASC",
-            ['mes' => $mesPagamento, 'ano' => $anoPagamento, 'uid' => $userId]
-        );
-
-        // Despesas pendentes do MÊS ATUAL (contas que ainda não pagou deste mês)
-        $despesasMesAtual = $despesaModel->query(
+        // Despesas pendentes DESTE mês
+        $despesas = $despesaModel->query(
             "SELECT d.*, c.nome as categoria_nome, ca.nome as cartao_nome
              FROM despesas d
              LEFT JOIN categorias c ON d.categoria_id = c.id
@@ -63,10 +44,19 @@ class DiaPagamentoController extends Controller
             ['mes' => $mes, 'ano' => $ano, 'uid' => $userId]
         );
 
-        // Juntar: primeiro as pendentes do mês atual, depois as do próximo
-        $despesas = array_merge($despesasMesAtual, $despesasProximoMes);
+        // Despesas já pagas deste mês
+        $despesasPagas = $despesaModel->query(
+            "SELECT d.*, c.nome as categoria_nome
+             FROM despesas d
+             LEFT JOIN categorias c ON d.categoria_id = c.id
+             WHERE d.mes_referencia = :mes AND d.ano_referencia = :ano
+             AND d.status = 'paga'
+             AND (d.usuario_id = :uid OR d.proprietario = 'compartilhado')
+             ORDER BY d.data_pagamento ASC",
+            ['mes' => $mes, 'ano' => $ano, 'uid' => $userId]
+        );
 
-        // Receita do usuário (mês atual)
+        // Receita do usuário
         $receita = $receitaModel->findOneWhere([
             'usuario_id' => $userId,
             'mes_referencia' => $mes,
@@ -84,14 +74,16 @@ class DiaPagamentoController extends Controller
             $totalFaltante += max($c['meta_mensal'] - $c['valor_atual'], 0);
         }
 
+        $totalPendente = array_sum(array_column($despesas, 'valor'));
+        $totalPago = array_sum(array_column($despesasPagas, 'valor'));
+
         // Mapeamento cofrinho → despesas vinculadas
         $cofrinhosDespesas = $this->mapCofrinhosDespesas($cofrinhos, $despesas);
 
         $this->view('dia-pagamento/index', compact(
-            'cofrinhos', 'despesas', 'receita', 'mes', 'ano',
-            'mesPagamento', 'anoPagamento',
-            'totalMeta', 'totalGuardado', 'totalFaltante', 'cofrinhosDespesas',
-            'despesasMesAtual', 'despesasProximoMes'
+            'cofrinhos', 'despesas', 'despesasPagas', 'receita', 'mes', 'ano',
+            'totalMeta', 'totalGuardado', 'totalFaltante',
+            'totalPendente', 'totalPago', 'cofrinhosDespesas'
         ));
     }
 

@@ -27,36 +27,27 @@ $salarioValor = $receita ? $receita['valor'] : 0;
     <?php endif; ?>
 </div>
 
-<!-- Explicação do fluxo -->
-<div class="card" style="padding:12px 16px;font-size:13px;color:var(--text-secondary);">
-    <i class="fas fa-info-circle" style="color:var(--info);"></i>
-    Cofrinhos de <strong><?= monthName($mes) ?></strong>: onde você guarda o dinheiro ao receber.
-    Contas de <strong><?= monthName($mesPagamento) ?></strong>: o que você vai pagar com esse dinheiro.
-</div>
-
-<!-- Resumo cofrinhos -->
-<div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+<!-- Resumo -->
+<div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
     <div class="stat-card savings">
-        <div class="stat-label">Guardado</div>
+        <div class="stat-label">Guardado nos cofrinhos</div>
         <div class="stat-value"><?= formatMoney($totalGuardado) ?></div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Meta total</div>
-        <div class="stat-value"><?= formatMoney($totalMeta) ?></div>
+        <div style="font-size:11px;color:var(--text-light);">Meta: <?= formatMoney($totalMeta) ?></div>
     </div>
     <div class="stat-card expense">
-        <div class="stat-label">Faltante</div>
-        <div class="stat-value negative"><?= formatMoney($totalFaltante) ?></div>
+        <div class="stat-label">Contas pendentes</div>
+        <div class="stat-value negative"><?= formatMoney($totalPendente) ?></div>
+        <div style="font-size:11px;color:var(--text-light);">Pago: <?= formatMoney($totalPago) ?></div>
     </div>
 </div>
 
 <!-- Ordem de prioridade dos cofrinhos -->
 <div class="card">
     <div class="card-header">
-        <span class="card-title"><i class="fas fa-list-ol"></i> Ordem de Distribuição</span>
+        <span class="card-title"><i class="fas fa-list-ol"></i> Cofrinhos — <?= monthName($mes) ?></span>
     </div>
     <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
-        Siga esta ordem ao receber o salário. Deposite nos cofrinhos do PicPay na mesma sequência.
+        Ao receber o salário, deposite nos cofrinhos nesta ordem. As contas vinculadas são deste mesmo mês.
     </p>
 
     <?php foreach ($cofrinhos as $i => $c): ?>
@@ -96,18 +87,18 @@ $salarioValor = $receita ? $receita['valor'] : 0;
         </div>
         <?php endif; ?>
 
-        <!-- Observação/instrução -->
+        <!-- Observação -->
         <?php if ($c['observacao']): ?>
         <div style="font-size:11px;color:var(--text-light);margin-bottom:8px;white-space:pre-line;">
-            <?= e($c['observacao']) ?>
+            <?= nl2br(e($c['observacao'])) ?>
         </div>
         <?php endif; ?>
 
-        <!-- Despesas vinculadas a este cofrinho -->
+        <!-- Contas vinculadas a este cofrinho -->
         <?php if (!empty($despesasVinculadas)): ?>
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">
-                CONTAS A PAGAR (<?= monthName($mesPagamento) ?>):
+                CONTAS A PAGAR:
             </div>
             <?php foreach ($despesasVinculadas as $d): ?>
             <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
@@ -119,7 +110,6 @@ $salarioValor = $receita ? $receita['valor'] : 0;
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;">
                     <span style="font-weight:700;color:var(--danger);"><?= formatMoney($d['valor']) ?></span>
-                    <!-- Botão pagar -->
                     <button onclick="toggleModal('modal-pagar-<?= $d['id'] ?>')" class="btn btn-success btn-sm" style="padding:4px 8px;font-size:11px;">
                         Pagar
                     </button>
@@ -139,14 +129,13 @@ $salarioValor = $receita ? $receita['valor'] : 0;
 
                         <div class="form-group">
                             <label>Valor previsto</label>
-                            <div style="font-size:18px;font-weight:700;color:var(--text);"><?= formatMoney($d['valor']) ?></div>
+                            <div style="font-size:18px;font-weight:700;"><?= formatMoney($d['valor']) ?></div>
                         </div>
 
                         <div class="form-group">
                             <label>Valor real pago (R$)</label>
                             <input type="text" name="valor_real" class="form-input" data-money
-                                   value="<?= number_format($d['valor'], 2, ',', '.') ?>"
-                                   placeholder="Valor real">
+                                   value="<?= number_format($d['valor'], 2, ',', '.') ?>">
                         </div>
 
                         <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px;background:var(--bg);border-radius:8px;">
@@ -182,3 +171,26 @@ $salarioValor = $receita ? $receita['valor'] : 0;
     </div>
     <?php endforeach; ?>
 </div>
+
+<!-- Contas já pagas neste mês -->
+<?php if (!empty($despesasPagas)): ?>
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-check-circle" style="color:var(--success);"></i> Já pagas em <?= monthName($mes) ?></span>
+    </div>
+    <?php foreach ($despesasPagas as $d): ?>
+    <div class="list-item" style="opacity:0.6;">
+        <div class="list-item-icon" style="background:var(--success-light);color:var(--success);">
+            <i class="fas fa-check"></i>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title" style="text-decoration:line-through;"><?= e($d['nome']) ?></div>
+            <div class="list-item-subtitle"><?= $d['data_pagamento'] ? 'Pago em ' . formatDate($d['data_pagamento']) : '' ?></div>
+        </div>
+        <div class="list-item-value">
+            <div class="list-item-amount"><?= formatMoney($d['valor']) ?></div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
