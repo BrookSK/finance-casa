@@ -134,5 +134,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/assets/js/app.js"></script>
+
+    <!-- Banner instalar PWA -->
+    <div id="pwaInstallBanner" class="pwa-banner" style="display:none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon"><i class="fas fa-download"></i></div>
+            <div class="pwa-banner-text">
+                <span class="pwa-banner-title">Instalar FinançasCasal</span>
+                <span class="pwa-banner-desc">Acesse direto da tela inicial do celular</span>
+            </div>
+            <button id="pwaInstallBtn" class="btn btn-primary btn-sm">Instalar</button>
+            <button id="pwaCloseBtn" class="pwa-banner-close"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
 </body>
 </html>

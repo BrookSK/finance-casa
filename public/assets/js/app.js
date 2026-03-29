@@ -139,3 +139,84 @@ function updateThemeUI(theme) {
     document.documentElement.setAttribute('data-theme', saved);
     document.addEventListener('DOMContentLoaded', () => updateThemeUI(saved));
 })();
+
+
+// ===== PWA Install Banner =====
+(function() {
+    let deferredPrompt = null;
+    const banner = document.getElementById('pwaInstallBanner');
+    const installBtn = document.getElementById('pwaInstallBtn');
+    const closeBtn = document.getElementById('pwaCloseBtn');
+
+    if (!banner) return;
+
+    // Não mostrar se já instalado (standalone) ou se o usuário já dispensou
+    function isStandalone() {
+        return window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+    }
+
+    function wasDismissed() {
+        return localStorage.getItem('pwa_banner_dismissed') === '1';
+    }
+
+    // Capturar o evento beforeinstallprompt (Chrome/Edge/Samsung)
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        if (!isStandalone() && !wasDismissed()) {
+            banner.style.display = 'block';
+        }
+    });
+
+    // Botão instalar
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result.outcome === 'accepted') {
+                banner.style.display = 'none';
+                localStorage.setItem('pwa_banner_dismissed', '1');
+            }
+            deferredPrompt = null;
+        });
+    }
+
+    // Botão fechar — não mostra mais por 7 dias
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            banner.style.display = 'none';
+            localStorage.setItem('pwa_banner_dismissed', '1');
+            localStorage.setItem('pwa_banner_dismissed_at', Date.now().toString());
+        });
+    }
+
+    // Reexibir após 7 dias se dispensou
+    const dismissedAt = localStorage.getItem('pwa_banner_dismissed_at');
+    if (dismissedAt && (Date.now() - parseInt(dismissedAt)) > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem('pwa_banner_dismissed');
+        localStorage.removeItem('pwa_banner_dismissed_at');
+    }
+
+    // Fallback para iOS (Safari não tem beforeinstallprompt)
+    const isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isSafari = /safari/.test(navigator.userAgent.toLowerCase()) && !/chrome/.test(navigator.userAgent.toLowerCase());
+
+    if (isIos && isSafari && !isStandalone() && !wasDismissed()) {
+        // Mostrar banner com instrução manual
+        if (installBtn) {
+            installBtn.textContent = 'Como instalar';
+            installBtn.addEventListener('click', () => {
+                alert('Toque no botão de compartilhar (ícone ⬆) e depois em "Adicionar à Tela de Início".');
+            }, { once: true });
+        }
+        banner.style.display = 'block';
+    }
+
+    // Esconder se já está em modo standalone
+    if (isStandalone()) {
+        banner.style.display = 'none';
+    }
+})();
