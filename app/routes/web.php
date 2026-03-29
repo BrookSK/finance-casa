@@ -57,6 +57,11 @@ function registerRoutes(Router $router): void
     // Timeline
     $router->get('/timeline', 'TimelineController', 'index');
 
+    // Dia do Pagamento
+    $router->get('/dia-pagamento', 'DiaPagamentoController', 'index');
+    $router->post('/dia-pagamento/pagar/{id}', 'DiaPagamentoController', 'pagar');
+    $router->post('/dia-pagamento/depositar/{id}', 'DiaPagamentoController', 'depositar');
+
     // Listas de compras
     $router->get('/listas', 'ListaCompraController', 'index');
     $router->get('/listas/criar', 'ListaCompraController', 'create');

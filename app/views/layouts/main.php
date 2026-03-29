@@ -35,6 +35,9 @@
             <a href="/dashboard" class="sidebar-link <?= isActive('/dashboard') ?: isActive('/') ?>">
                 <i class="fas fa-chart-pie"></i><span>Dashboard</span>
             </a>
+            <a href="/dia-pagamento" class="sidebar-link <?= isActive('/dia-pagamento') ?>">
+                <i class="fas fa-hand-holding-usd"></i><span>Dia do Pagamento</span>
+            </a>
             <a href="/timeline" class="sidebar-link <?= isActive('/timeline') ?>">
                 <i class="fas fa-calendar-alt"></i><span>Timeline</span>
             </a>

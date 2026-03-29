@@ -56,9 +56,20 @@ class DespesaController extends Controller
 
     public function marcarPaga(string $id): void
     {
+        $despesa = (new Despesa())->findById((int) $id);
+        if (!$despesa) { redirect('/despesas'); return; }
+
         (new Despesa())->update((int) $id, ['status' => 'paga', 'data_pagamento' => date('Y-m-d')]);
-        setFlash('success', 'Despesa marcada como paga.');
-        redirect('/despesas');
+
+        // Redirecionar para dia-pagamento se veio de lá
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if (strpos($referer, 'dia-pagamento') !== false) {
+            setFlash('success', 'Despesa paga. Use a tela Dia do Pagamento para descontar do cofrinho.');
+            redirect('/dia-pagamento');
+        } else {
+            setFlash('success', 'Despesa marcada como paga.');
+            redirect('/despesas');
+        }
     }
 
     private function validateInput(): array
