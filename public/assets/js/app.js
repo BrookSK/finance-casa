@@ -7,9 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initAlerts();
     initMoneyInputs();
     initPageTitle();
+    initNotifBadge();
+    initPWA();
 });
 
-// Sidebar toggle
+// ===== Sidebar toggle =====
 function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -22,105 +24,87 @@ function initSidebar() {
             overlay.classList.add('show');
         });
     }
-
     const closeSidebar = () => {
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
     };
-
     if (close) close.addEventListener('click', closeSidebar);
     if (overlay) overlay.addEventListener('click', closeSidebar);
 }
 
-// Auto-dismiss alerts
+// ===== Auto-dismiss alerts =====
 function initAlerts() {
-    document.querySelectorAll('.alert').forEach(alert => {
+    document.querySelectorAll('.alert').forEach(el => {
         setTimeout(() => {
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-10px)';
-            setTimeout(() => alert.remove(), 300);
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-10px)';
+            setTimeout(() => el.remove(), 300);
         }, 4000);
     });
 }
 
-// Money input formatting
+// ===== Money input formatting =====
 function initMoneyInputs() {
     document.querySelectorAll('input[data-money]').forEach(input => {
         input.addEventListener('input', (e) => {
             let val = e.target.value.replace(/\D/g, '');
+            if (!val) { e.target.value = ''; return; }
             val = (parseInt(val) / 100).toFixed(2);
             e.target.value = val.replace('.', ',');
         });
     });
 }
 
-// Set page title from active nav
+// ===== Page title from active nav =====
 function initPageTitle() {
     const active = document.querySelector('.sidebar-link.active span, .bottom-nav-item.active span');
     const title = document.getElementById('pageTitle');
-    if (active && title) {
-        title.textContent = active.textContent;
-    }
+    if (active && title) title.textContent = active.textContent;
 }
 
-// Confirm delete
-function confirmDelete(form, name) {
-    if (confirm(`Tem certeza que deseja excluir "${name}"?`)) {
-        form.submit();
-    }
-    return false;
+// ===== Notification badge =====
+function initNotifBadge() {
+    if (!document.querySelector('.main-content')) return;
+    checkNotifications();
+    setInterval(checkNotifications, 60000);
 }
 
-// Toggle modal
-function toggleModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-        modal.classList.toggle('show');
-    }
-}
-
-// Format money display
-function formatMoney(value) {
-    return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
-
-
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-    });
-}
-
-
-// Verificar notificações não lidas (badge)
 function checkNotifications() {
     fetch('/api/notificacoes/count')
         .then(r => r.json())
         .then(data => {
-            const badges = document.querySelectorAll('#notifBadgeSidebar, #notifBadgeTop');
+            const sidebar = document.getElementById('notifBadgeSidebar');
             const dot = document.getElementById('notifBadgeTop');
             if (data.total > 0) {
-                const sidebar = document.getElementById('notifBadgeSidebar');
                 if (sidebar) { sidebar.textContent = data.total; sidebar.style.display = 'inline'; }
                 if (dot) dot.style.display = 'block';
+            } else {
+                if (sidebar) sidebar.style.display = 'none';
+                if (dot) dot.style.display = 'none';
             }
         })
         .catch(() => {});
 }
 
-// Verificar a cada 60 segundos
-if (document.querySelector('.main-content')) {
-    checkNotifications();
-    setInterval(checkNotifications, 60000);
+// ===== Helpers =====
+function confirmDelete(form, name) {
+    if (confirm(`Tem certeza que deseja excluir "${name}"?`)) form.submit();
+    return false;
 }
 
+function toggleModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.toggle('show');
+}
 
-// Dark mode toggle
+function formatMoney(value) {
+    return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// ===== Dark mode =====
 function toggleTheme() {
     const html = document.documentElement;
-    const current = html.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
     updateThemeUI(next);
@@ -133,16 +117,56 @@ function updateThemeUI(theme) {
     if (label) label.textContent = theme === 'dark' ? 'Modo claro' : 'Modo escuro';
 }
 
-// Aplicar tema salvo
+// Aplicar tema salvo imediatamente
 (function() {
     const saved = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     document.addEventListener('DOMContentLoaded', () => updateThemeUI(saved));
 })();
 
+// ===== PWA: Service Worker + Install Banner + Notificações =====
+function initPWA() {
+    registerServiceWorker();
+    initInstallBanner();
+}
 
-// ===== PWA Install Banner =====
-(function() {
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+            console.log('SW registrado:', registration.scope);
+
+            // Pedir permissão de notificação após login
+            if (document.querySelector('.main-content')) {
+                requestNotificationPermission(registration);
+            }
+        })
+        .catch(err => console.log('SW falhou:', err));
+}
+
+function requestNotificationPermission(registration) {
+    // Só pedir se ainda não decidiu
+    if (Notification.permission !== 'default') return;
+
+    // Esperar 5 segundos para não ser invasivo
+    setTimeout(() => {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notificações permitidas');
+                // Mostrar notificação de boas-vindas
+                registration.showNotification('FinançasCasal', {
+                    body: 'Notificações ativadas! Você será avisado sobre vencimentos e alertas.',
+                    icon: '/assets/img/icon-192.png',
+                    badge: '/assets/img/icon-192.png',
+                    tag: 'welcome'
+                });
+            }
+        });
+    }, 5000);
+}
+
+function initInstallBanner() {
     let deferredPrompt = null;
     const banner = document.getElementById('pwaInstallBanner');
     const installBtn = document.getElementById('pwaInstallBtn');
@@ -150,73 +174,103 @@ function updateThemeUI(theme) {
 
     if (!banner) return;
 
-    // Não mostrar se já instalado (standalone) ou se o usuário já dispensou
     function isStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
     }
 
     function wasDismissed() {
-        return localStorage.getItem('pwa_banner_dismissed') === '1';
+        const dismissed = localStorage.getItem('pwa_dismiss');
+        if (!dismissed) return false;
+        // Reexibir após 7 dias
+        if ((Date.now() - parseInt(dismissed)) > 7 * 86400000) {
+            localStorage.removeItem('pwa_dismiss');
+            return false;
+        }
+        return true;
     }
 
-    // Capturar o evento beforeinstallprompt (Chrome/Edge/Samsung)
+    // Se já está instalado, nunca mostrar
+    if (isStandalone()) return;
+
+    // Android/Chrome: capturar beforeinstallprompt
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-
-        if (!isStandalone() && !wasDismissed()) {
-            banner.style.display = 'block';
-        }
+        if (!wasDismissed()) banner.style.display = 'block';
     });
 
     // Botão instalar
     if (installBtn) {
         installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            if (result.outcome === 'accepted') {
+            if (deferredPrompt) {
+                // Android: prompt nativo
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    localStorage.setItem('pwa_dismiss', Date.now().toString());
+                }
+                deferredPrompt = null;
                 banner.style.display = 'none';
-                localStorage.setItem('pwa_banner_dismissed', '1');
             }
-            deferredPrompt = null;
         });
     }
 
-    // Botão fechar — não mostra mais por 7 dias
+    // Botão fechar
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             banner.style.display = 'none';
-            localStorage.setItem('pwa_banner_dismissed', '1');
-            localStorage.setItem('pwa_banner_dismissed_at', Date.now().toString());
+            localStorage.setItem('pwa_dismiss', Date.now().toString());
         });
     }
 
-    // Reexibir após 7 dias se dispensou
-    const dismissedAt = localStorage.getItem('pwa_banner_dismissed_at');
-    if (dismissedAt && (Date.now() - parseInt(dismissedAt)) > 7 * 24 * 60 * 60 * 1000) {
-        localStorage.removeItem('pwa_banner_dismissed');
-        localStorage.removeItem('pwa_banner_dismissed_at');
-    }
+    // iOS Safari: não tem beforeinstallprompt, mostrar instrução manual
+    const ua = navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua);
+    const isSafari = /safari/.test(ua) && !/crios|fxios|chrome/.test(ua);
 
-    // Fallback para iOS (Safari não tem beforeinstallprompt)
-    const isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-    const isSafari = /safari/.test(navigator.userAgent.toLowerCase()) && !/chrome/.test(navigator.userAgent.toLowerCase());
-
-    if (isIos && isSafari && !isStandalone() && !wasDismissed()) {
-        // Mostrar banner com instrução manual
+    if (isIos && isSafari && !wasDismissed()) {
+        banner.style.display = 'block';
         if (installBtn) {
             installBtn.textContent = 'Como instalar';
-            installBtn.addEventListener('click', () => {
-                alert('Toque no botão de compartilhar (ícone ⬆) e depois em "Adicionar à Tela de Início".');
-            }, { once: true });
+            installBtn.onclick = () => {
+                alert(
+                    'Para instalar no iPhone/iPad:\n\n' +
+                    '1. Toque no ícone de compartilhar (⬆️) na barra do Safari\n' +
+                    '2. Role para baixo e toque em "Adicionar à Tela de Início"\n' +
+                    '3. Toque em "Adicionar"'
+                );
+            };
         }
-        banner.style.display = 'block';
     }
+}
 
-    // Esconder se já está em modo standalone
-    if (isStandalone()) {
-        banner.style.display = 'none';
-    }
-})();
+// ===== Notificações locais periódicas =====
+// Verificar vencimentos e mostrar notificação no navegador
+function checkAndNotifyBrowser() {
+    if (Notification.permission !== 'granted') return;
+    if (!('serviceWorker' in navigator)) return;
+
+    fetch('/api/notificacoes/count')
+        .then(r => r.json())
+        .then(data => {
+            if (data.total > 0) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification('FinançasCasal', {
+                        body: `Você tem ${data.total} notificação(ões) pendente(s)`,
+                        icon: '/assets/img/icon-192.png',
+                        badge: '/assets/img/icon-192.png',
+                        tag: 'pending-notifs',
+                        renotify: false,
+                        data: { url: '/notificacoes' }
+                    });
+                });
+            }
+        })
+        .catch(() => {});
+}
+
+// Verificar a cada 5 minutos (só se a aba estiver ativa)
+if (document.querySelector('.main-content')) {
+    setInterval(checkAndNotifyBrowser, 5 * 60 * 1000);
+}

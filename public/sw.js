@@ -1,38 +1,124 @@
-const CACHE_NAME = 'financas-casal-v1';
-const ASSETS = [
+const CACHE_NAME = 'financas-casal-v2';
+const STATIC_ASSETS = [
     '/assets/css/app.css',
     '/assets/js/app.js',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+    '/manifest.json',
 ];
 
-self.addEventListener('install', (e) => {
-    e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+// Install — cachear assets estáticos
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(STATIC_ASSETS))
+            .then(() => self.skipWaiting())
     );
-    self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-        )
+// Activate — limpar caches antigos
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys()
+            .then(keys => Promise.all(
+                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+            ))
+            .then(() => self.clients.claim())
     );
-    self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-    if (e.request.method !== 'GET') return;
-    e.respondWith(
-        fetch(e.request)
-            .then(response => {
-                if (response.ok && e.request.url.includes('/assets/')) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-                }
-                return response;
+// Fetch — network first para páginas, cache first para assets
+self.addEventListener('fetch', (event) => {
+    const { request } = event;
+
+    // Ignorar POST e requests não-GET
+    if (request.method !== 'GET') return;
+
+    // Assets estáticos: cache first
+    if (request.url.includes('/assets/') || request.url.includes('/manifest.json')) {
+        event.respondWith(
+            caches.match(request).then(cached => {
+                const fetchPromise = fetch(request).then(response => {
+                    if (response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+                    }
+                    return response;
+                }).catch(() => cached);
+
+                return cached || fetchPromise;
             })
-            .catch(() => caches.match(e.request))
+        );
+        return;
+    }
+
+    // Páginas HTML: network first, fallback cache
+    if (request.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(
+            fetch(request)
+                .then(response => {
+                    if (response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match(request).then(cached => {
+                    return cached || caches.match('/dashboard');
+                }))
+        );
+        return;
+    }
+});
+
+// Push notifications
+self.addEventListener('push', (event) => {
+    let data = { title: 'FinançasCasal', body: 'Você tem uma nova notificação' };
+
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: data.body || data.mensagem || '',
+        icon: '/assets/img/icon-192.png',
+        badge: '/assets/img/icon-192.png',
+        vibrate: [200, 100, 200],
+        tag: data.tag || 'default',
+        data: { url: data.url || data.link || '/dashboard' },
+        actions: [
+            { action: 'open', title: 'Abrir' },
+            { action: 'close', title: 'Fechar' }
+        ]
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || data.titulo || 'FinançasCasal', options)
+    );
+});
+
+// Clique na notificação
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    if (event.action === 'close') return;
+
+    const url = event.notification.data?.url || '/dashboard';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(windowClients => {
+                // Se já tem uma aba aberta, foca nela
+                for (const client of windowClients) {
+                    if (client.url.includes(self.location.origin)) {
+                        client.navigate(url);
+                        return client.focus();
+                    }
+                }
+                // Senão abre nova aba
+                return clients.openWindow(url);
+            })
     );
 });
