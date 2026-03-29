@@ -1,0 +1,24 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads do usuário
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Dependências (caso use no futuro)
+vendor/
+node_modules/
+
+# Cache
+*.cache
