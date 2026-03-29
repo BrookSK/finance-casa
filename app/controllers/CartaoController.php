@@ -7,11 +7,19 @@ class CartaoController extends Controller
         $ano = (int) ($_GET['ano'] ?? currentYear());
         $cartoes = (new Cartao())->getAllActive();
         $cartaoModel = new Cartao();
+        $faturaModel = new Fatura();
 
-        // Adicionar gasto atual a cada cartão
         foreach ($cartoes as &$c) {
             $c['gasto_atual'] = $cartaoModel->getGastoAtual($c['id'], $mes, $ano);
             $c['limite_disponivel'] = $c['limite_total'] - $c['gasto_atual'];
+            // Buscar status da fatura do mês
+            $fatura = $faturaModel->findOneWhere([
+                'cartao_id' => $c['id'],
+                'mes_referencia' => $mes,
+                'ano_referencia' => $ano,
+            ]);
+            $c['fatura_status'] = $fatura['status'] ?? null;
+            $c['fatura_vencimento'] = $fatura['data_vencimento'] ?? null;
         }
 
         $this->view('cartoes/index', compact('cartoes', 'mes', 'ano'));

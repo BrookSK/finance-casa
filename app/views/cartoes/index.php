@@ -33,6 +33,15 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
             <div>
                 <div class="cartao-info-label">Fatura atual</div>
                 <div class="cartao-info-value"><?= formatMoney($c['gasto_atual']) ?></div>
+                <?php if ($c['fatura_status'] === 'paga'): ?>
+                <div style="font-size:11px;margin-top:2px;">✅ Paga</div>
+                <?php elseif ($c['fatura_status'] === 'fechada'): ?>
+                <div style="font-size:11px;margin-top:2px;">🔒 Fechada</div>
+                <?php elseif ($c['fatura_status'] === 'aberta'): ?>
+                <div style="font-size:11px;margin-top:2px;">📂 Aberta</div>
+                <?php elseif ($c['gasto_atual'] == 0): ?>
+                <div style="font-size:11px;margin-top:2px;">Sem fatura</div>
+                <?php endif; ?>
             </div>
             <div>
                 <div class="cartao-info-label">Disponível</div>
