@@ -263,6 +263,94 @@ class CartaoController extends Controller
         redirect('/cartoes/detalhe/' . $id . '?mes=' . $mesFatura . '&ano=' . $anoFatura);
     }
 
+    public function editLancamento(string $cartaoId, string $lancamentoId): void
+    {
+        $lancamento = (new Fatura())->query(
+            "SELECT fl.*, f.cartao_id, f.mes_referencia, f.ano_referencia
+             FROM fatura_lancamentos fl
+             LEFT JOIN faturas f ON fl.fatura_id = f.id
+             WHERE fl.id = :id",
+            ['id' => (int) $lancamentoId]
+        );
+        if (empty($lancamento)) { redirect('/cartoes/detalhe/' . $cartaoId); return; }
+        $lancamento = $lancamento[0];
+
+        $categorias = (new Categoria())->getActive('despesa');
+        $cartao = (new Cartao())->findById((int) $cartaoId);
+        $this->view('cartoes/edit-lancamento', compact('lancamento', 'categorias', 'cartao', 'cartaoId'));
+    }
+
+    public function updateLancamento(string $cartaoId, string $lancamentoId): void
+    {
+        $valor = (float) str_replace(['.', ','], ['', '.'], $_POST['valor'] ?? '0');
+        $descricao = trim($_POST['descricao'] ?? '');
+        $categoriaId = !empty($_POST['categoria_id']) ? (int) $_POST['categoria_id'] : null;
+        $dataCompra = $_POST['data_compra'] ?: null;
+
+        $faturaModel = new Fatura();
+
+        // Pegar lançamento atual para calcular diferença
+        $atual = $faturaModel->query("SELECT * FROM fatura_lancamentos WHERE id = :id", ['id' => (int) $lancamentoId]);
+        if (empty($atual)) { redirect('/cartoes/detalhe/' . $cartaoId); return; }
+        $atual = $atual[0];
+        $diferenca = $valor - $atual['valor'];
+
+        // Atualizar lançamento
+        $faturaModel->execute(
+            "UPDATE fatura_lancamentos SET descricao = :desc, valor = :val, categoria_id = :cat, data_compra = :dc WHERE id = :id",
+            ['desc' => $descricao, 'val' => $valor, 'cat' => $categoriaId, 'dc' => $dataCompra, 'id' => (int) $lancamentoId]
+        );
+
+        // Atualizar total da fatura
+        if ($diferenca != 0) {
+            $faturaModel->execute(
+                "UPDATE faturas SET valor_total = valor_total + :diff WHERE id = :fid",
+                ['diff' => $diferenca, 'fid' => $atual['fatura_id']]
+            );
+        }
+
+        // Atualizar despesa vinculada se existir
+        if ($atual['despesa_id']) {
+            (new Despesa())->update($atual['despesa_id'], [
+                'nome' => $descricao,
+                'valor' => $valor,
+                'categoria_id' => $categoriaId,
+            ]);
+        }
+
+        $fatura = $faturaModel->findById($atual['fatura_id']);
+        setFlash('success', 'Lançamento atualizado.');
+        redirect('/cartoes/detalhe/' . $cartaoId . '?mes=' . $fatura['mes_referencia'] . '&ano=' . $fatura['ano_referencia']);
+    }
+
+    public function deleteLancamento(string $cartaoId, string $lancamentoId): void
+    {
+        $this->requireAdmin();
+        $faturaModel = new Fatura();
+
+        $lancamento = $faturaModel->query("SELECT * FROM fatura_lancamentos WHERE id = :id", ['id' => (int) $lancamentoId]);
+        if (empty($lancamento)) { redirect('/cartoes/detalhe/' . $cartaoId); return; }
+        $lancamento = $lancamento[0];
+
+        // Subtrair do total da fatura
+        $faturaModel->execute(
+            "UPDATE faturas SET valor_total = GREATEST(valor_total - :val, 0) WHERE id = :fid",
+            ['val' => $lancamento['valor'], 'fid' => $lancamento['fatura_id']]
+        );
+
+        // Deletar despesa vinculada
+        if ($lancamento['despesa_id']) {
+            (new Despesa())->delete($lancamento['despesa_id']);
+        }
+
+        // Deletar lançamento
+        $faturaModel->execute("DELETE FROM fatura_lancamentos WHERE id = :id", ['id' => (int) $lancamentoId]);
+
+        $fatura = $faturaModel->findById($lancamento['fatura_id']);
+        setFlash('success', 'Lançamento excluído.');
+        redirect('/cartoes/detalhe/' . $cartaoId . '?mes=' . ($fatura['mes_referencia'] ?? currentMonth()) . '&ano=' . ($fatura['ano_referencia'] ?? currentYear()));
+    }
+
     public function delete(string $id): void
     {
         $this->requireAdmin();

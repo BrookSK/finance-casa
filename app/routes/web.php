@@ -48,6 +48,9 @@ function registerRoutes(Router $router): void
     $router->post('/cartoes/salvar', 'CartaoController', 'store');
     $router->get('/cartoes/detalhe/{id}', 'CartaoController', 'detalhe');
     $router->post('/cartoes/lancamento/{id}', 'CartaoController', 'addLancamento');
+    $router->get('/cartoes/{cartaoId}/lancamento/{lancamentoId}/editar', 'CartaoController', 'editLancamento');
+    $router->post('/cartoes/{cartaoId}/lancamento/{lancamentoId}/atualizar', 'CartaoController', 'updateLancamento');
+    $router->post('/cartoes/{cartaoId}/lancamento/{lancamentoId}/excluir', 'CartaoController', 'deleteLancamento');
     $router->get('/cartoes/editar/{id}', 'CartaoController', 'edit');
     $router->post('/cartoes/atualizar/{id}', 'CartaoController', 'update');
     $router->post('/cartoes/excluir/{id}', 'CartaoController', 'delete');

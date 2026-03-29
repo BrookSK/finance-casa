@@ -128,6 +128,13 @@ $pctUso = $cartao['limite_total'] > 0 ? percentual($gastoAtual, $cartao['limite_
         <div class="list-item-value">
             <div class="list-item-amount"><?= formatMoney($l['valor']) ?></div>
         </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px;">
+            <a href="/cartoes/<?= $cartao['id'] ?>/lancamento/<?= $l['id'] ?>/editar" class="btn btn-outline btn-sm" style="padding:4px 6px;"><i class="fas fa-edit" style="font-size:11px;"></i></a>
+            <form method="POST" action="/cartoes/<?= $cartao['id'] ?>/lancamento/<?= $l['id'] ?>/excluir" style="display:inline;" onsubmit="return confirm('Excluir lançamento?')">
+                <?= csrfField() ?>
+                <button type="submit" class="btn btn-sm" style="padding:4px 6px;color:var(--danger);background:none;border:1px solid var(--border);"><i class="fas fa-trash" style="font-size:11px;"></i></button>
+            </form>
+        </div>
     </div>
     <?php endforeach; ?>
 </div>
