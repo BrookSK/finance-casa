@@ -27,6 +27,13 @@ $salarioValor = $receita ? $receita['valor'] : 0;
     <?php endif; ?>
 </div>
 
+<!-- Explicação do fluxo -->
+<div class="card" style="padding:12px 16px;font-size:13px;color:var(--text-secondary);">
+    <i class="fas fa-info-circle" style="color:var(--info);"></i>
+    Cofrinhos de <strong><?= monthName($mes) ?></strong>: onde você guarda o dinheiro ao receber.
+    Contas de <strong><?= monthName($mesPagamento) ?></strong>: o que você vai pagar com esse dinheiro.
+</div>
+
 <!-- Resumo cofrinhos -->
 <div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr;">
     <div class="stat-card savings">
@@ -100,7 +107,7 @@ $salarioValor = $receita ? $receita['valor'] : 0;
         <?php if (!empty($despesasVinculadas)): ?>
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">
-                CONTAS VINCULADAS:
+                CONTAS A PAGAR (<?= monthName($mesPagamento) ?>):
             </div>
             <?php foreach ($despesasVinculadas as $d): ?>
             <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
