@@ -69,6 +69,192 @@ class CartaoController extends Controller
         redirect('/cartoes');
     }
 
+    public function detalhe(string $id): void
+    {
+        $mes = (int) ($_GET['mes'] ?? currentMonth());
+        $ano = (int) ($_GET['ano'] ?? currentYear());
+        $cartao = (new Cartao())->findById((int) $id);
+        if (!$cartao) { redirect('/cartoes'); return; }
+
+        $cartao['usuario_nome'] = (new Usuario())->findById($cartao['usuario_id'])['nome'] ?? '';
+
+        // Fatura do mês
+        $faturaModel = new Fatura();
+        $fatura = $faturaModel->findOneWhere([
+            'cartao_id' => (int) $id,
+            'mes_referencia' => $mes,
+            'ano_referencia' => $ano,
+        ]);
+
+        // Lançamentos da fatura
+        $lancamentos = [];
+        if ($fatura) {
+            $lancamentos = $faturaModel->query(
+                "SELECT fl.*, c.nome as categoria_nome, c.cor as categoria_cor
+                 FROM fatura_lancamentos fl
+                 LEFT JOIN categorias c ON fl.categoria_id = c.id
+                 WHERE fl.fatura_id = :fid ORDER BY fl.data_compra ASC",
+                ['fid' => $fatura['id']]
+            );
+        }
+
+        // Despesas vinculadas ao cartão neste mês
+        $despesas = (new Despesa())->query(
+            "SELECT d.*, c.nome as categoria_nome
+             FROM despesas d
+             LEFT JOIN categorias c ON d.categoria_id = c.id
+             WHERE d.cartao_id = :cid AND d.mes_referencia = :mes AND d.ano_referencia = :ano
+             ORDER BY d.data_vencimento ASC, d.nome ASC",
+            ['cid' => (int) $id, 'mes' => $mes, 'ano' => $ano]
+        );
+
+        // Totais por categoria
+        $porCategoria = [];
+        foreach ($lancamentos as $l) {
+            $cat = $l['categoria_nome'] ?? 'Sem categoria';
+            if (!isset($porCategoria[$cat])) {
+                $porCategoria[$cat] = ['nome' => $cat, 'cor' => $l['categoria_cor'] ?? '#6366f1', 'total' => 0, 'qtd' => 0];
+            }
+            $porCategoria[$cat]['total'] += $l['valor'];
+            $porCategoria[$cat]['qtd']++;
+        }
+        usort($porCategoria, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        // Parcelas em aberto neste cartão
+        $parcelas = (new Despesa())->query(
+            "SELECT d.*, c.nome as categoria_nome
+             FROM despesas d
+             LEFT JOIN categorias c ON d.categoria_id = c.id
+             WHERE d.cartao_id = :cid AND d.parcelada = 1 AND d.status = 'pendente'
+             ORDER BY d.mes_referencia ASC, d.parcela_atual ASC",
+            ['cid' => (int) $id]
+        );
+
+        // Gasto atual (do model)
+        $gastoAtual = (new Cartao())->getGastoAtual((int) $id, $mes, $ano);
+        $limiteDisponivel = $cartao['limite_total'] - $gastoAtual;
+
+        $categorias = (new Categoria())->getActive('despesa');
+
+        $this->view('cartoes/detalhe', compact(
+            'cartao', 'fatura', 'lancamentos', 'despesas', 'porCategoria',
+            'parcelas', 'gastoAtual', 'limiteDisponivel', 'mes', 'ano', 'categorias'
+        ));
+    }
+
+    public function addLancamento(string $id): void
+    {
+        $mes = (int) ($_POST['mes_referencia'] ?? currentMonth());
+        $ano = (int) ($_POST['ano_referencia'] ?? currentYear());
+        $cartao = (new Cartao())->findById((int) $id);
+        if (!$cartao) { redirect('/cartoes'); return; }
+
+        $valor = (float) str_replace(['.', ','], ['', '.'], $_POST['valor'] ?? '0');
+        $descricao = trim($_POST['descricao'] ?? '');
+        $categoriaId = !empty($_POST['categoria_id']) ? (int) $_POST['categoria_id'] : null;
+        $dataCompra = $_POST['data_compra'] ?: date('Y-m-d');
+        $proprietario = $_POST['proprietario'] ?? 'compartilhado';
+        $parcelada = isset($_POST['parcelada']) ? 1 : 0;
+        $totalParcelas = !empty($_POST['total_parcelas']) ? (int) $_POST['total_parcelas'] : null;
+
+        // Determinar em qual fatura cai (baseado na data de compra vs fechamento)
+        $diaCompra = (int) date('d', strtotime($dataCompra));
+        $mesCompra = (int) date('m', strtotime($dataCompra));
+        $anoCompra = (int) date('Y', strtotime($dataCompra));
+
+        if ($diaCompra > $cartao['dia_fechamento']) {
+            // Cai na fatura do mês seguinte
+            $mesFatura = $mesCompra + 1;
+            $anoFatura = $anoCompra;
+            if ($mesFatura > 12) { $mesFatura = 1; $anoFatura++; }
+        } else {
+            $mesFatura = $mesCompra;
+            $anoFatura = $anoCompra;
+        }
+
+        // Criar ou pegar fatura
+        $faturaModel = new Fatura();
+        $fatura = $faturaModel->getOrCreate((int) $id, $mesFatura, $anoFatura);
+
+        if ($parcelada && $totalParcelas > 1) {
+            // Criar lançamento e despesa para cada parcela
+            $valorParcela = round($valor / $totalParcelas, 2);
+            for ($p = 1; $p <= $totalParcelas; $p++) {
+                $mf = $mesFatura + ($p - 1);
+                $af = $anoFatura;
+                while ($mf > 12) { $mf -= 12; $af++; }
+
+                $fat = $faturaModel->getOrCreate((int) $id, $mf, $af);
+
+                // Lançamento na fatura
+                $faturaModel->execute(
+                    "INSERT INTO fatura_lancamentos (fatura_id, descricao, valor, categoria_id, parcela_atual, total_parcelas, data_compra)
+                     VALUES (:fid, :desc, :val, :cat, :pa, :tp, :dc)",
+                    ['fid' => $fat['id'], 'desc' => $descricao . " ({$p}/{$totalParcelas})", 'val' => $valorParcela,
+                     'cat' => $categoriaId, 'pa' => $p, 'tp' => $totalParcelas, 'dc' => $dataCompra]
+                );
+
+                // Atualizar total da fatura
+                $faturaModel->execute(
+                    "UPDATE faturas SET valor_total = valor_total + :val WHERE id = :fid",
+                    ['val' => $valorParcela, 'fid' => $fat['id']]
+                );
+
+                // Despesa
+                $dataVenc = date('Y-m-d', mktime(0, 0, 0, $mf, $cartao['dia_vencimento'], $af));
+                (new Despesa())->create([
+                    'usuario_id' => $this->user()['id'],
+                    'nome' => $descricao . " ({$p}/{$totalParcelas})",
+                    'valor' => $valorParcela,
+                    'tipo' => 'parcelada',
+                    'categoria_id' => $categoriaId,
+                    'proprietario' => $proprietario,
+                    'forma_pagamento' => 'credito',
+                    'cartao_id' => (int) $id,
+                    'data_vencimento' => $dataVenc,
+                    'parcelada' => 1,
+                    'total_parcelas' => $totalParcelas,
+                    'parcela_atual' => $p,
+                    'mes_referencia' => $mf,
+                    'ano_referencia' => $af,
+                    'status' => 'pendente',
+                ]);
+            }
+        } else {
+            // Lançamento único
+            $faturaModel->execute(
+                "INSERT INTO fatura_lancamentos (fatura_id, descricao, valor, categoria_id, data_compra)
+                 VALUES (:fid, :desc, :val, :cat, :dc)",
+                ['fid' => $fatura['id'], 'desc' => $descricao, 'val' => $valor,
+                 'cat' => $categoriaId, 'dc' => $dataCompra]
+            );
+
+            $faturaModel->execute(
+                "UPDATE faturas SET valor_total = valor_total + :val WHERE id = :fid",
+                ['val' => $valor, 'fid' => $fatura['id']]
+            );
+
+            $dataVenc = date('Y-m-d', mktime(0, 0, 0, $mesFatura, $cartao['dia_vencimento'], $anoFatura));
+            (new Despesa())->create([
+                'usuario_id' => $this->user()['id'],
+                'nome' => $descricao,
+                'valor' => $valor,
+                'tipo' => 'variavel',
+                'categoria_id' => $categoriaId,
+                'proprietario' => $proprietario,
+                'forma_pagamento' => 'credito',
+                'cartao_id' => (int) $id,
+                'data_vencimento' => $dataVenc,
+                'mes_referencia' => $mesFatura,
+                'ano_referencia' => $anoFatura,
+                'status' => 'pendente',
+            ]);
+        }
+
+        setFlash('success', 'Lançamento adicionado ao cartão.');
+        redirect('/cartoes/detalhe/' . $id . '?mes=' . $mesFatura . '&ano=' . $anoFatura);
+    }
+
     public function delete(string $id): void
     {
         $this->requireAdmin();

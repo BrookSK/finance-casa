@@ -59,7 +59,12 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
     </div>
     <?php if (($currentUser['papel'] ?? '') === 'admin'): ?>
     <div style="display:flex;gap:8px;margin-bottom:16px;margin-top:-8px;">
+        <a href="/cartoes/detalhe/<?= $c['id'] ?>?mes=<?= $mes ?>&ano=<?= $ano ?>" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> Ver detalhes</a>
         <a href="/cartoes/editar/<?= $c['id'] ?>" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Editar</a>
+    </div>
+    <?php else: ?>
+    <div style="display:flex;gap:8px;margin-bottom:16px;margin-top:-8px;">
+        <a href="/cartoes/detalhe/<?= $c['id'] ?>?mes=<?= $mes ?>&ano=<?= $ano ?>" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> Ver detalhes</a>
     </div>
     <?php endif; ?>
     <?php endforeach; ?>
