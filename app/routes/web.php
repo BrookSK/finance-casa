@@ -99,4 +99,12 @@ function registerRoutes(Router $router): void
     $router->post('/configuracoes/usuario/{id}', 'ConfigController', 'updateUsuario');
     $router->post('/configuracoes/categoria', 'ConfigController', 'addCategoria');
     $router->post('/configuracoes/categoria/excluir/{id}', 'ConfigController', 'deleteCategoria');
+
+    // Contas Bancárias
+    $router->get('/contas', 'ContaBancariaController', 'index');
+    $router->get('/contas/criar', 'ContaBancariaController', 'create');
+    $router->post('/contas/salvar', 'ContaBancariaController', 'store');
+    $router->get('/contas/editar/{id}', 'ContaBancariaController', 'edit');
+    $router->post('/contas/atualizar/{id}', 'ContaBancariaController', 'update');
+    $router->post('/contas/excluir/{id}', 'ContaBancariaController', 'delete');
 }

@@ -63,6 +63,9 @@
             <a href="/relatorios" class="sidebar-link <?= isActive('/relatorios') ?>">
                 <i class="fas fa-chart-line"></i><span>Relatórios</span>
             </a>
+            <a href="/contas" class="sidebar-link <?= isActive('/contas') ?>">
+                <i class="fas fa-university"></i><span>Contas Bancárias</span>
+            </a>
             <a href="/notificacoes" class="sidebar-link <?= isActive('/notificacoes') ?>">
                 <i class="fas fa-bell"></i><span>Notificações</span>
                 <span id="notifBadgeSidebar" class="notif-badge" style="display:none;"></span>
