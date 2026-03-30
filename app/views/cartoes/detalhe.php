@@ -140,23 +140,24 @@ $pctUso = $cartao['limite_total'] > 0 ? percentual($gastoAtual, $cartao['limite_
 </div>
 <?php endif; ?>
 
-<!-- Parcelas em aberto neste cartão -->
+<!-- Parcelas ativas neste cartão (resumo) -->
 <?php if (!empty($parcelas)): ?>
 <div class="card">
-    <div class="card-title mb-2">Parcelas em Aberto</div>
+    <div class="card-title mb-2">Parcelas Ativas</div>
     <?php foreach ($parcelas as $p): ?>
     <div class="list-item">
         <div class="list-item-icon" style="background:var(--warning-light);color:var(--warning);">
-            <i class="fas fa-clock" style="font-size:12px;"></i>
+            <i class="fas fa-sync-alt" style="font-size:12px;"></i>
         </div>
         <div class="list-item-content">
             <div class="list-item-title"><?= e($p['nome']) ?></div>
             <div class="list-item-subtitle">
-                <?= e($p['categoria_nome'] ?? '') ?> · <?= monthName($p['mes_referencia']) ?>/<?= $p['ano_referencia'] ?>
+                <?= $p['parcelas_restantes'] ?> parcela(s) restante(s) · até <?= $p['ultimo_mes'] ?>
             </div>
         </div>
         <div class="list-item-value">
-            <div class="list-item-amount"><?= formatMoney($p['valor']) ?></div>
+            <div class="list-item-amount"><?= formatMoney($p['valor']) ?>/mês</div>
+            <div class="list-item-date">Total: <?= formatMoney($p['valor'] * $p['parcelas_restantes']) ?></div>
         </div>
     </div>
     <?php endforeach; ?>

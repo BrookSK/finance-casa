@@ -128,13 +128,16 @@ class CartaoController extends Controller
         }
         usort($porCategoria, fn($a, $b) => $b['total'] <=> $a['total']);
 
-        // Parcelas em aberto neste cartão
+        // Resumo de parcelas ativas neste cartão (agrupado por nome)
         $parcelas = (new Despesa())->query(
-            "SELECT d.*, c.nome as categoria_nome
+            "SELECT d.nome, MIN(d.parcela_atual) as proxima_parcela, MAX(d.total_parcelas) as total_parcelas,
+                    d.valor, COUNT(*) as parcelas_restantes,
+                    MIN(CONCAT(d.ano_referencia, '-', LPAD(d.mes_referencia, 2, '0'))) as proximo_mes,
+                    MAX(CONCAT(d.ano_referencia, '-', LPAD(d.mes_referencia, 2, '0'))) as ultimo_mes
              FROM despesas d
-             LEFT JOIN categorias c ON d.categoria_id = c.id
              WHERE d.cartao_id = :cid AND d.parcelada = 1 AND d.status = 'pendente'
-             ORDER BY d.mes_referencia ASC, d.parcela_atual ASC",
+             GROUP BY d.nome, d.valor
+             ORDER BY proximo_mes ASC",
             ['cid' => (int) $id]
         );
 
