@@ -150,9 +150,9 @@ $pctUso = $cartao['limite_total'] > 0 ? percentual($gastoAtual, $cartao['limite_
             <i class="fas fa-sync-alt" style="font-size:12px;"></i>
         </div>
         <div class="list-item-content">
-            <div class="list-item-title"><?= e($p['nome']) ?></div>
+            <div class="list-item-title"><?= e($p['nome_base']) ?></div>
             <div class="list-item-subtitle">
-                <?= $p['parcelas_restantes'] ?> parcela(s) restante(s) · até <?= $p['ultimo_mes'] ?>
+                Parcela <?= $p['proxima_parcela'] ?> a <?= $p['ultima_parcela'] ?> de <?= $p['total_parcelas'] ?> · até <?= $p['ultimo_mes'] ?>
             </div>
         </div>
         <div class="list-item-value">
