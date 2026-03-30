@@ -110,6 +110,29 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
 </div>
 <?php endif; ?>
 
+<!-- Orçamento Cartão de Crédito -->
+<?php
+$pctCartao = percentual($gastoCartao, $orcamentoCartao);
+?>
+<div class="card" style="border-left:4px solid #7c3aed;">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-credit-card" style="color:#7c3aed;"></i> Orçamento Cartão</span>
+        <span style="font-size:12px;color:var(--text-secondary);">Limite: <?= formatMoney($orcamentoCartao) ?></span>
+    </div>
+    <div class="flex-between mb-1">
+        <span style="font-size:14px;font-weight:600;">Gasto: <?= formatMoney($gastoCartao) ?></span>
+        <span style="font-size:14px;font-weight:700;color:<?= $restanteCartao >= 0 ? 'var(--success)' : 'var(--danger)' ?>;">
+            <?= $restanteCartao >= 0 ? 'Restante: ' . formatMoney($restanteCartao) : 'Estourou: ' . formatMoney(abs($restanteCartao)) ?>
+        </span>
+    </div>
+    <div class="progress">
+        <div class="progress-bar <?= statusColor($pctCartao) ?>" style="width:<?= min($pctCartao, 100) ?>%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:4px;">
+        <?= $pctCartao ?>% usado · Soma de todos os cartões (exceto assinaturas, parcelas fixas e empresa)
+    </div>
+</div>
+
 <!-- Próximos vencimentos -->
 <div class="card">
     <div class="card-header">

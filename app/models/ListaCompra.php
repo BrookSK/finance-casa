@@ -52,11 +52,19 @@ class ListaCompra extends Model
         $stmt->execute(['mes' => $mes, 'ano' => $ano]);
         $totalListas = (float) $stmt->fetchColumn();
 
-        // Soma de despesas pagas na categoria Mercado (id=9) no mês
+        // Soma de despesas na categoria Mercado (id=9)
+        // Busca no mês atual E no próximo (compras de agora caem na fatura do mês que vem)
+        $mesProx = $mes + 1;
+        $anoProx = $ano;
+        if ($mesProx > 12) { $mesProx = 1; $anoProx++; }
+
         $sql2 = "SELECT COALESCE(SUM(d.valor), 0) FROM despesas d
-                 WHERE d.categoria_id = 9 AND d.mes_referencia = :mes AND d.ano_referencia = :ano AND d.status = 'paga'";
+                 WHERE d.categoria_id = 9
+                 AND ((d.mes_referencia = :mes AND d.ano_referencia = :ano)
+                   OR (d.mes_referencia = :mes2 AND d.ano_referencia = :ano2))
+                 AND (d.status = 'paga' OR (d.status = 'pendente' AND d.cartao_id IS NOT NULL))";
         $stmt2 = $this->db->prepare($sql2);
-        $stmt2->execute(['mes' => $mes, 'ano' => $ano]);
+        $stmt2->execute(['mes' => $mes, 'ano' => $ano, 'mes2' => $mesProx, 'ano2' => $anoProx]);
         $totalDespesas = (float) $stmt2->fetchColumn();
 
         return $totalListas + $totalDespesas;

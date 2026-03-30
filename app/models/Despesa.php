@@ -64,7 +64,10 @@ class Despesa extends Model
 
     public function getGastoCategoria(int $categoriaId, int $mes, int $ano): float
     {
-        $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas WHERE categoria_id = :cid AND mes_referencia = :mes AND ano_referencia = :ano AND status = 'paga'";
+        // Conta despesas pagas + despesas pendentes de cartão (gasto já aconteceu, fatura não venceu)
+        $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas
+                WHERE categoria_id = :cid AND mes_referencia = :mes AND ano_referencia = :ano
+                AND (status = 'paga' OR (status = 'pendente' AND cartao_id IS NOT NULL))";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['cid' => $categoriaId, 'mes' => $mes, 'ano' => $ano]);
         return (float) $stmt->fetchColumn();
@@ -74,7 +77,8 @@ class Despesa extends Model
     {
         $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas
                 WHERE cartao_id IS NOT NULL AND entra_orcamento_cartao = 1
-                AND mes_referencia = :mes AND ano_referencia = :ano";
+                AND mes_referencia = :mes AND ano_referencia = :ano
+                AND status IN ('paga', 'pendente')";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['mes' => $mes, 'ano' => $ano]);
         return (float) $stmt->fetchColumn();

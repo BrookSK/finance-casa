@@ -41,12 +41,22 @@ class DashboardController extends Controller
         $orcamentos = $orcamentoModel->getByMonth($mes, $ano);
         $orcamentosComGasto = [];
         foreach ($orcamentos as $orc) {
-            $gasto = $despesaModel->getGastoCategoria($orc['categoria_id'], $mes, $ano);
+            if ($orc['categoria_id'] == 12) {
+                // Gastos Livres / Cartão: usa o campo entra_orcamento_cartao
+                $gasto = $despesaModel->getGastoOrcamentoCartao($mes, $ano);
+            } else {
+                $gasto = $despesaModel->getGastoCategoria($orc['categoria_id'], $mes, $ano);
+            }
             $orc['gasto'] = $gasto;
             $orc['restante'] = $orc['valor_limite'] - $gasto;
             $orc['percentual'] = percentual($gasto, $orc['valor_limite']);
             $orcamentosComGasto[] = $orc;
         }
+
+        // Orçamento do cartão separado (pra mostrar no dashboard)
+        $gastoCartao = $despesaModel->getGastoOrcamentoCartao($mes, $ano);
+        $orcamentoCartao = 500;
+        $restanteCartao = $orcamentoCartao - $gastoCartao;
 
         // Status do mês
         if ($saldoMes >= 0 && $faltaPagar <= $faltaReceber) {
@@ -62,7 +72,8 @@ class DashboardController extends Controller
             'saldoMes', 'saldoDisponivel', 'faltaPagar', 'faltaReceber',
             'totalCofrinhos', 'totalMetaCofrinhos', 'totalFaturasAbertas',
             'proximosVencimentos', 'proximosRecebimentos', 'gastosPorCategoria',
-            'orcamentosComGasto', 'statusMes', 'cofrinhosIncompletos'
+            'orcamentosComGasto', 'statusMes', 'cofrinhosIncompletos',
+            'gastoCartao', 'orcamentoCartao', 'restanteCartao'
         ));
     }
 }

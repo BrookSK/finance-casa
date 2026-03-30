@@ -49,6 +49,28 @@ $pctUso = $cartao['limite_total'] > 0 ? percentual($gastoAtual, $cartao['limite_
     <a href="/cartoes/detalhe/<?= $cartao['id'] ?>?mes=<?= $mesProximo ?>&ano=<?= $anoProximo ?>"><i class="fas fa-chevron-right"></i></a>
 </div>
 
+<!-- Orçamento do cartão (R$ 500 compartilhado entre todos os cartões) -->
+<?php
+$gastoOrcCartao = (new Despesa())->getGastoOrcamentoCartao($mes, $ano);
+$orcCartao = 500;
+$restOrcCartao = $orcCartao - $gastoOrcCartao;
+$pctOrcCartao = percentual($gastoOrcCartao, $orcCartao);
+?>
+<div class="card" style="border-left:4px solid #7c3aed;padding:12px 16px;">
+    <div class="flex-between" style="font-size:13px;">
+        <span><i class="fas fa-credit-card" style="color:#7c3aed;"></i> Orçamento Cartão (todos)</span>
+        <span style="font-weight:700;color:<?= $restOrcCartao >= 0 ? 'var(--success)' : 'var(--danger)' ?>;">
+            <?= $restOrcCartao >= 0 ? formatMoney($restOrcCartao) . ' disponível' : 'Estourou ' . formatMoney(abs($restOrcCartao)) ?>
+        </span>
+    </div>
+    <div class="progress" style="margin-top:6px;">
+        <div class="progress-bar <?= statusColor($pctOrcCartao) ?>" style="width:<?= min($pctOrcCartao, 100) ?>%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
+        <?= formatMoney($gastoOrcCartao) ?> / <?= formatMoney($orcCartao) ?> (<?= $pctOrcCartao ?>%)
+    </div>
+</div>
+
 <!-- Status da fatura -->
 <?php if ($fatura): ?>
 <div class="card">
