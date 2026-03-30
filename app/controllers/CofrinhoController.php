@@ -11,6 +11,14 @@ class CofrinhoController extends Controller
         $model = new Cofrinho();
         $userId = $filtroUser ? (int) $filtroUser : null;
         $cofrinhos = $model->getByMonth($mes, $ano, $userId, $filtroTipo ?: null);
+
+        // Carregar sub-itens de cada cofrinho
+        $itemModel = new CofrinhoItem();
+        foreach ($cofrinhos as &$c) {
+            $c['itens'] = $itemModel->getByCofrinho($c['id']);
+        }
+        unset($c);
+
         $totalMeta = $model->getTotalMeta($mes, $ano);
         $totalGuardado = $model->getTotalGuardado($mes, $ano);
         $usuarios = (new Usuario())->getAllActive();

@@ -81,6 +81,18 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
                 Falta: <?= formatMoney($faltante) ?>
             </div>
             <?php endif; ?>
+
+            <!-- Sub-itens do cofrinho -->
+            <?php if (!empty($c['itens'])): ?>
+            <div style="border-top:1px solid var(--border);padding-top:6px;margin:6px 0;">
+                <?php foreach ($c['itens'] as $item): ?>
+                <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--text-secondary);">
+                    <span><?= e($item['nome']) ?></span>
+                    <span style="font-weight:600;"><?= formatMoney($item['valor']) ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
             <div class="cofrinho-footer">
                 <!-- Depositar -->
                 <form method="POST" action="/cofrinhos/depositar/<?= $c['id'] ?>" style="display:flex;gap:4px;flex:1;">
@@ -98,6 +110,12 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
                 <a href="/cofrinhos/editar/<?= $c['id'] ?>" class="btn btn-outline btn-sm" style="padding:8px;" title="Editar">
                     <i class="fas fa-edit"></i>
                 </a>
+                <form method="POST" action="/cofrinhos/excluir/<?= $c['id'] ?>" style="display:inline;" onsubmit="return confirm('Excluir o cofrinho &quot;<?= e($c['nome']) ?>&quot;? Todo o histórico será perdido.')">
+                    <?= csrfField() ?>
+                    <button type="submit" class="btn btn-sm" style="padding:8px;color:var(--danger);background:none;border:1px solid var(--border);" title="Excluir">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
                 <?php endif; ?>
             </div>
         </div>

@@ -94,6 +94,19 @@ $salarioValor = $receita ? $receita['valor'] : 0;
         </div>
         <?php endif; ?>
 
+        <!-- Sub-itens do cofrinho -->
+        <?php if (!empty($c['itens'])): ?>
+        <div style="border-top:1px solid var(--border);padding-top:6px;margin-bottom:8px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:4px;">COMPOSIÇÃO:</div>
+            <?php foreach ($c['itens'] as $item): ?>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--text-secondary);">
+                <span><?= e($item['nome']) ?></span>
+                <span style="font-weight:600;"><?= formatMoney($item['valor']) ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Contas vinculadas a este cofrinho -->
         <?php if (!empty($despesasVinculadas)): ?>
         <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">

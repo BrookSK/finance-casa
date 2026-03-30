@@ -28,6 +28,7 @@ class DiaPagamentoController extends Controller
 
         foreach ($cofrinhos as &$c) {
             $c['prioridade_num'] = $this->extractPriority($c['observacao'] ?? '');
+            $c['itens'] = (new CofrinhoItem())->getByCofrinho($c['id']);
         }
         unset($c);
 
