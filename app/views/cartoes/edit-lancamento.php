@@ -42,6 +42,16 @@
         </div>
         <?php endif; ?>
 
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" name="excluir_orcamento_cartao" id="excluir_orc" value="1">
+                <label for="excluir_orc">Não conta no orçamento do cartão (R$ 500)</label>
+            </div>
+            <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
+                Marque para assinaturas, parcelas fixas, empresa.
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block">
             <i class="fas fa-save"></i> Salvar
         </button>

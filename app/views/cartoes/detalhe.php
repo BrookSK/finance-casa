@@ -246,11 +246,11 @@ $pctOrcCartao = percentual($gastoOrcCartao, $orcCartao);
 
         <div class="form-group">
             <div class="form-check">
-                <input type="checkbox" name="entra_orcamento_cartao" id="entra_orc_cartao" value="1" checked>
-                <label for="entra_orc_cartao">Entra no orçamento do cartão (R$ 500)</label>
+                <input type="checkbox" name="excluir_orcamento_cartao" id="excluir_orc_cartao" value="1">
+                <label for="excluir_orc_cartao">Não conta no orçamento do cartão (R$ 500)</label>
             </div>
             <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
-                Desmarque para assinaturas, parcelas fixas, leite, empresa.
+                Marque para assinaturas, parcelas fixas, empresa. Compras normais deixe desmarcado.
             </div>
         </div>
 

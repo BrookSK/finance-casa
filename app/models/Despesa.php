@@ -76,7 +76,7 @@ class Despesa extends Model
     public function getGastoOrcamentoCartao(int $mes, int $ano): float
     {
         $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas
-                WHERE cartao_id IS NOT NULL AND entra_orcamento_cartao = 1
+                WHERE cartao_id IS NOT NULL AND excluir_orcamento_cartao = 0
                 AND mes_referencia = :mes AND ano_referencia = :ano
                 AND status IN ('paga', 'pendente')";
         $stmt = $this->db->prepare($sql);

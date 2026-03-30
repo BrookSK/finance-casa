@@ -171,7 +171,7 @@ class CartaoController extends Controller
         $proprietario = $_POST['proprietario'] ?? 'compartilhado';
         $parcelada = isset($_POST['parcelada']) ? 1 : 0;
         $totalParcelas = !empty($_POST['total_parcelas']) ? (int) $_POST['total_parcelas'] : null;
-        $entraOrcCartao = isset($_POST['entra_orcamento_cartao']) ? 1 : 0;
+        $entraOrcCartao = isset($_POST['excluir_orcamento_cartao']) ? 1 : 0;
 
         // Determinar em qual fatura cai (baseado na data de compra vs fechamento)
         $diaCompra = (int) date('d', strtotime($dataCompra));
@@ -234,7 +234,7 @@ class CartaoController extends Controller
                     'mes_referencia' => $mf,
                     'ano_referencia' => $af,
                     'status' => 'pendente',
-                    'entra_orcamento_cartao' => $entraOrcCartao,
+                    'excluir_orcamento_cartao' => $entraOrcCartao,
                 ]);
             }
         } else {
@@ -265,7 +265,7 @@ class CartaoController extends Controller
                 'mes_referencia' => $mesFatura,
                 'ano_referencia' => $anoFatura,
                 'status' => 'pendente',
-                'entra_orcamento_cartao' => $entraOrcCartao,
+                'excluir_orcamento_cartao' => $entraOrcCartao,
             ]);
         }
 
@@ -325,6 +325,7 @@ class CartaoController extends Controller
                 'nome' => $descricao,
                 'valor' => $valor,
                 'categoria_id' => $categoriaId,
+                'excluir_orcamento_cartao' => isset($_POST['excluir_orcamento_cartao']) ? 1 : 0,
             ]);
         }
 
