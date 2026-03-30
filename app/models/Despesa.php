@@ -75,8 +75,11 @@ class Despesa extends Model
 
     public function getGastoOrcamentoCartao(int $mes, int $ano): float
     {
+        // Soma despesas de cartão que entram no orçamento do cartão
+        // Exclui: marcados como excluir + categoria Mercado (id=9, tem orçamento próprio)
         $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas
                 WHERE cartao_id IS NOT NULL AND excluir_orcamento_cartao = 0
+                AND (categoria_id IS NULL OR categoria_id != 9)
                 AND mes_referencia = :mes AND ano_referencia = :ano
                 AND status IN ('paga', 'pendente')";
         $stmt = $this->db->prepare($sql);
