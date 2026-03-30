@@ -222,6 +222,16 @@ $pctUso = $cartao['limite_total'] > 0 ? percentual($gastoAtual, $cartao['limite_
             <input type="number" name="total_parcelas" class="form-input" min="2" max="48" placeholder="Ex: 3">
         </div>
 
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" name="entra_orcamento_cartao" id="entra_orc_cartao" value="1" checked>
+                <label for="entra_orc_cartao">Entra no orçamento do cartão (R$ 500)</label>
+            </div>
+            <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
+                Desmarque para assinaturas, parcelas fixas, leite, empresa.
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block">
             <i class="fas fa-plus"></i> Adicionar Lançamento
         </button>

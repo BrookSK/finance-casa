@@ -120,6 +120,7 @@ class DespesaController extends Controller
             'ano_referencia' => (int) ($_POST['ano_referencia'] ?? currentYear()),
             'status' => $_POST['status'] ?? 'pendente',
             'observacao' => trim($_POST['observacao'] ?? ''),
+            'entra_orcamento_cartao' => isset($_POST['entra_orcamento_cartao']) ? 1 : 0,
         ];
     }
 }

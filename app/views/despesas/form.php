@@ -157,6 +157,17 @@
             <textarea name="observacao" class="form-input" rows="2"><?= e($despesa['observacao'] ?? '') ?></textarea>
         </div>
 
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" name="entra_orcamento_cartao" id="entra_orcamento_cartao" value="1"
+                       <?= ($despesa['entra_orcamento_cartao'] ?? 0) ? 'checked' : '' ?>>
+                <label for="entra_orcamento_cartao">Entra no orçamento do cartão (R$ 500)</label>
+            </div>
+            <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
+                Marque para compras do dia a dia. Não marque para assinaturas, parcelas fixas, leite, empresa.
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block">
             <i class="fas fa-save"></i> <?= $despesa ? 'Atualizar' : 'Salvar' ?>
         </button>

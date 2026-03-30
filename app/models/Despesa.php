@@ -70,3 +70,13 @@ class Despesa extends Model
         return (float) $stmt->fetchColumn();
     }
 }
+
+    public function getGastoOrcamentoCartao(int $mes, int $ano): float
+    {
+        $sql = "SELECT COALESCE(SUM(valor), 0) FROM despesas
+                WHERE cartao_id IS NOT NULL AND entra_orcamento_cartao = 1
+                AND mes_referencia = :mes AND ano_referencia = :ano";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['mes' => $mes, 'ano' => $ano]);
+        return (float) $stmt->fetchColumn();
+    }
