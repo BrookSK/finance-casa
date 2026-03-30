@@ -69,7 +69,6 @@ class Despesa extends Model
         $stmt->execute(['cid' => $categoriaId, 'mes' => $mes, 'ano' => $ano]);
         return (float) $stmt->fetchColumn();
     }
-}
 
     public function getGastoOrcamentoCartao(int $mes, int $ano): float
     {
@@ -80,3 +79,4 @@ class Despesa extends Model
         $stmt->execute(['mes' => $mes, 'ano' => $ano]);
         return (float) $stmt->fetchColumn();
     }
+}
