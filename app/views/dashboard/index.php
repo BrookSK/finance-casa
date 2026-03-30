@@ -92,7 +92,7 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
         <span class="card-title"><i class="fas fa-chart-bar"></i> Orçamentos</span>
     </div>
     <?php foreach ($orcamentosComGasto as $orc): ?>
-    <div style="margin-bottom: 14px;">
+    <a href="/despesas?mes=<?= $mes ?>&ano=<?= $ano ?>&categoria=<?= $orc['categoria_id'] ?>" style="display:block;margin-bottom:14px;text-decoration:none;color:inherit;">
         <div class="flex-between mb-1">
             <span style="font-size:13px;font-weight:600;"><?= e($orc['categoria_nome'] ?? 'Sem categoria') ?></span>
             <span style="font-size:12px;color:var(--text-secondary);">
@@ -103,9 +103,9 @@ if ($mesProximo > 12) { $mesProximo = 1; $anoProximo++; }
             <div class="progress-bar <?= statusColor($orc['percentual']) ?>" style="width:<?= $orc['percentual'] ?>%"></div>
         </div>
         <div style="font-size:11px;color:var(--text-light);margin-top:2px;">
-            Restante: <?= formatMoney($orc['restante']) ?> (<?= $orc['percentual'] ?>% usado)
+            Restante: <?= formatMoney($orc['restante']) ?> (<?= $orc['percentual'] ?>% usado) · <span style="color:var(--primary);">ver detalhes →</span>
         </div>
-    </div>
+    </a>
     <?php endforeach; ?>
 </div>
 <?php endif; ?>

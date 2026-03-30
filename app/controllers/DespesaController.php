@@ -7,10 +7,11 @@ class DespesaController extends Controller
         $ano = (int) ($_GET['ano'] ?? currentYear());
         $filtroStatus = $_GET['status'] ?? '';
         $filtroProprietario = $_GET['proprietario'] ?? '';
+        $filtroCategoria = $_GET['categoria'] ?? '';
 
         $model = new Despesa();
 
-        if ($filtroStatus || $filtroProprietario) {
+        if ($filtroStatus || $filtroProprietario || $filtroCategoria) {
             $sql = "SELECT d.*, u.nome as usuario_nome, c.nome as categoria_nome, c.cor as categoria_cor,
                            ca.nome as cartao_nome
                     FROM despesas d
@@ -27,6 +28,10 @@ class DespesaController extends Controller
                 $sql .= " AND d.proprietario = :prop";
                 $params['prop'] = $filtroProprietario;
             }
+            if ($filtroCategoria) {
+                $sql .= " AND d.categoria_id = :cat";
+                $params['cat'] = (int) $filtroCategoria;
+            }
             $sql .= " ORDER BY d.data_vencimento ASC, d.nome ASC";
             $despesas = $model->query($sql, $params);
         } else {
@@ -35,7 +40,7 @@ class DespesaController extends Controller
 
         $totalDespesas = $model->getTotalByMonth($mes, $ano);
         $totalPago = $model->getTotalPago($mes, $ano);
-        $this->view('despesas/index', compact('despesas', 'mes', 'ano', 'totalDespesas', 'totalPago', 'filtroStatus', 'filtroProprietario'));
+        $this->view('despesas/index', compact('despesas', 'mes', 'ano', 'totalDespesas', 'totalPago', 'filtroStatus', 'filtroProprietario', 'filtroCategoria'));
     }
 
     public function create(): void
